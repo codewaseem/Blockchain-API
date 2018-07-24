@@ -7,7 +7,7 @@ dotenv.config({ path: DOT_ENV_PATH });
 
 const app = express();
 
-app.set("port", process.env.PORT || 3000);
+app.set("port", process.env.PORT || 8000);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
