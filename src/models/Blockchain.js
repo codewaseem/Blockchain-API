@@ -20,6 +20,23 @@ class Blockchain {
         return (await chainDB.get(CHAIN_DB_NAME).then(JSON.parse).catch(() => []));
     }
 
+    async getStarsRegistryByAddress(address) {
+        let chain = await this.getChain();
+        return chain.filter((block => {
+            return block.body.address === address;
+        }));
+    }
+
+    async getBlockByHash(hash) {
+        let chain = await this.getChain();
+        let blockFound = null;
+        for (let block of chain) {
+            if (block.hash === hash) {
+                blockFound = block;
+            }
+        }
+        return blockFound;
+    }
     /**
      * This helper method returns hash of last block in the provided blockchain, if there is no block in the
      * blockchain then it will return an empty string.

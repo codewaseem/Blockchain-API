@@ -2,22 +2,6 @@ const bitcoin = require('bitcoinjs-lib');
 const bitcoinMessage = require('bitcoinjs-message');
 import blockChain from "../models/Blockchain";
 
-/* requestValidation endpoint
-
-curl -X "POST" "http://localhost:8000/requestValidation" \
-     -H 'Content-Type: application/json; charset=utf-8' \
-     -d $'{
-  "address": "142BDCeSGbXjWKaAnYXbMpZ6sbrSAo3DpZ"
-}'
-
-{
-  "address": "142BDCeSGbXjWKaAnYXbMpZ6sbrSAo3DpZ",
-  "requestTimeStamp": "1532296090",
-  "message": "142BDCeSGbXjWKaAnYXbMpZ6sbrSAo3DpZ:1532296090:starRegistry",
-  "validationWindow": 300
-}
-*/
-
 const VALIIDATION_WINDOW_SECONDS = 300;
 
 function getTimeStampInSeconds() {
@@ -72,21 +56,14 @@ export function requestValidation(req, res) {
     if (address) {
         const requestTimeStamp = getTimeStampInSeconds();
         requestTimer.addNewRequest(address, requestTimeStamp);
-        res.json({
-            success: true,
-            data: {
-                address: address,
-                requestTimeStamp: requestTimeStamp,
-                message: `${address}:${requestTimeStamp}:starRegistry`,
-                validationWindow: VALIIDATION_WINDOW_SECONDS
-            }
+        sendSuccessJsonResponse(res, {
+            address: address,
+            requestTimeStamp: requestTimeStamp,
+            message: `${address}:${requestTimeStamp}:starRegistry`,
+            validationWindow: VALIIDATION_WINDOW_SECONDS
         });
     } else {
-        res.statusCode = 400;
-        res.json({
-            success: false,
-            message: "Address not provided."
-        });
+        sendFailureJsonResponse(res, 400, "Address not provided.");
     }
 }
 
@@ -94,42 +71,27 @@ export function messageSignatureValidate(req, res) {
     let { address, signature } = req.body;
     if (address && signature) {
         if (requestTimer.isRequestExpired(address)) {
-            res.statusCode = 400;
-            res.json({
-                success: false,
-                message: "Signature expired."
-            });
+            sendFailureJsonResponse(res, 400, "Signature expired.");
         } else {
             const requestTimeStamp = requestTimer.getTimeStampFor(address);
             const message = `${address}:${requestTimeStamp}:starRegistry`;
             if (bitcoinMessage.verify(message, address, signature)) {
-                res.json({
-                    success: true,
-                    data: {
-                        "registerStar": true,
-                        "status": {
-                            address,
-                            requestTimeStamp,
-                            message,
-                            validationWindow: getTimeStampInSeconds() - requestTimeStamp,
-                            messageSignature: "valid"
-                        }
+                sendSuccessJsonResponse(res, {
+                    "registerStar": true,
+                    "status": {
+                        address,
+                        requestTimeStamp,
+                        message,
+                        validationWindow: getTimeStampInSeconds() - requestTimeStamp,
+                        messageSignature: "valid"
                     }
-                })
-            } else {
-                res.statusCode = 400;
-                res.json({
-                    success: false,
-                    message: "Signature expired/invalid."
                 });
+            } else {
+                sendFailureJsonResponse(res, 400, "Signature expired/invalid.");
             }
         }
     } else {
-        res.statusCode = 400;
-        res.json({
-            success: false,
-            message: "Address/Signature not provided."
-        });
+        sendFailureJsonResponse(res, 400, "Address/Signature not provided.");
     }
 }
 
@@ -137,29 +99,76 @@ export function registerStar(req, res) {
     let { address, star } = req.body;
     if (address && isStarDataValid(star)) {
         if (requestTimer.isRequestExpired(address)) {
-            res.statusCode = 400;
-            res.json({
-                success: false,
-                message: "Request expired/used."
-            });
+            sendFailureJsonResponse(res, 400, "Request expired/used.");
         } else {
             const blockData = { address, star };
             blockChain.createAndAddBlock(blockData)
                 .then(block => {
-                    res.json({
-                        success: true,
-                        data: block
-                    });
+                    sendSuccessJsonResponse(res, block);
                 });
             requestTimer.removeRequest(address);
         }
     } else {
-        res.statusCode = 400;
-        res.json({
-            success: false,
-            message: "Address/star object is invalid."
-        });
+        sendFailureJsonResponse(res, 400, "Address/star object is invalid.");
     }
+}
+
+export async function getStarByBlockHeight(req, res) {
+    try {
+        const block = await blockChain.getBlock(req.params.height);
+        if (block)
+            sendSuccessJsonResponse(res, block);
+        else {
+            sendFailureJsonResponse(res, 404, "block " + req.params.height + " does not exist.");
+        }
+    } catch (e) {
+        sendFailureJsonResponse(res, 500, "Something went wrong while getting block " + req.params.height);
+    }
+}
+
+export async function getStarsByAddresses(req, res) {
+    try {
+        const blocks = await blockChain.getStarsRegistryByAddress(req.params.address);
+        sendSuccessJsonResponse(res, blocks);
+    } catch (e) {
+        sendFailureJsonResponse(res, 500, "Something went wrong!");
+    }
+}
+
+export async function getBlockByHash(req, res) {
+    try {
+        let block = await blockChain.getBlockByHash(req.params.hash);
+        if (block) {
+            sendSuccessJsonResponse(res, block);
+        } else {
+            sendFailureJsonResponse(res, 404, "No block found by hash " + req.params.hash);
+        }
+    } catch (e) {
+        sendFailureJsonResponse(res, 500, "Something went wrong!");
+    }
+}
+
+function sendSuccessJsonResponse(res, data = "", message = "") {
+    let response = {
+        success: true
+    };
+    if (data) response.data = data;
+
+    if (message) response.message = message;
+
+    res.json(response);
+}
+
+function sendFailureJsonResponse(res, statusCode, message = "") {
+    let response = {
+        success: false,
+    }
+
+    if (message) response.message = message;
+
+    res.statusCode = statusCode;
+
+    res.json(response);
 }
 
 function isStarDataValid(star) {
