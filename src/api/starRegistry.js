@@ -2,7 +2,7 @@ const bitcoin = require('bitcoinjs-lib');
 const bitcoinMessage = require('bitcoinjs-message');
 import blockChain from "../models/Blockchain";
 
-const VALIIDATION_WINDOW_SECONDS = 300;
+const VALIIDATION_WINDOW_SECONDS = 300 // 5 minutes;
 
 function getTimeStampInSeconds() {
     return Math.floor(Date.now() / 1000);
@@ -51,6 +51,15 @@ class RequestValidationTimer {
 
 const requestTimer = new RequestValidationTimer();
 
+/**
+ * Route handler for /requestValidation
+ * 
+ * Expects wallet address in request body, using this 
+ * address a message is generated to be signed by the requester
+ * within the time @VALIDATION_WINDOW_SECONDS in seconds,
+ * and the wallet address is added to the session for future
+ * requests.
+ */
 export function requestValidation(req, res) {
     let { address } = req.body;
     if (address) {
@@ -67,6 +76,13 @@ export function requestValidation(req, res) {
     }
 }
 
+/**
+ * Route handler for /message-signature/validate 
+ *
+ * Validates the signature signed by the user with the
+ * wallet address if the request session of the given 
+ * wallet address has not expired yet.
+ */
 export function messageSignatureValidate(req, res) {
     let { address, signature } = req.body;
     if (address && signature) {
@@ -95,6 +111,13 @@ export function messageSignatureValidate(req, res) {
     }
 }
 
+/**
+ * This handler registers a star for the given 
+ * wallet address and adds it to the blockchain and
+ * the wallet address is removed from the session to make
+ * sure that the user doesn't register more than one star without 
+ * verifying again.
+ */
 export function registerStar(req, res) {
     let { address, star } = req.body;
     if (address && isStarDataValid(star)) {
@@ -114,6 +137,9 @@ export function registerStar(req, res) {
     }
 }
 
+/**
+ * This handler gets the star registry by the given block height.
+ */
 export async function getStarByBlockHeight(req, res) {
     try {
         const block = await blockChain.getBlock(req.params.height);
@@ -127,6 +153,10 @@ export async function getStarByBlockHeight(req, res) {
     }
 }
 
+/**
+ * This handler returns all the stars that are registered for 
+ * the given wallet address
+ */
 export async function getStarsByAddresses(req, res) {
     try {
         const blocks = await blockChain.getStarsRegistryByAddress(req.params.address);
@@ -136,6 +166,10 @@ export async function getStarsByAddresses(req, res) {
     }
 }
 
+/**
+ * 
+ * This handler returs the block by its hash.
+ */
 export async function getBlockByHash(req, res) {
     try {
         let block = await blockChain.getBlockByHash(req.params.hash);
@@ -148,6 +182,11 @@ export async function getBlockByHash(req, res) {
         sendFailureJsonResponse(res, 500, "Something went wrong!");
     }
 }
+
+
+/**
+ * HELPER FUNCTIONS
+ */
 
 function sendSuccessJsonResponse(res, data = "", message = "") {
     let response = {
