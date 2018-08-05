@@ -1,7 +1,7 @@
 {
   "name": "blockchain-api",
   "version": "1.0.0",
-  "description": "Blockchian API",
+  "description": "Blockchian API for star registry notarization services.",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
