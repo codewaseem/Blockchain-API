@@ -1,11 +1,12 @@
 ## Introduction
 
 This project is from Udacity's Blockchain Developer Nanodegree Program. The goal of this 
-project is to create a public REST API in Node.js to interact with the Private Blockchian
-which was implemented in the previous project. 
-The REST API lets you
-* Query the blockchain to get the block at a given height
-* Add a new block to the blockchain
+project is to implement stary registry notarization service. 
+*   The star registry service will notarize star ownership utilizing your blockchain identity.
+*   The service will provide a message to verify wallet address utilizing message signature as proof. Verification process contains a validation window of five minutes.
+*   Once a wallet address is verified, the owner has the right to register the star.
+*   Each star has the ability to share a story. The story will support Ascii text which is encoded in hexadecimal format within our private blockchain.
+*   The web API will provide functionality to look up the star by the star hash, star block height, or wallet address (blockchain ID).
 
 ##  Prerequisites
 
@@ -36,65 +37,221 @@ in your terminal. This will start the server at `http://localhost:8000/`
 
 ## About the REST Endpoints
 
-* `GET` `/block/:height` (full url `http://localhost:8000/block/:height`)
-This will get the block at the given `:height`. The `:height` can be any positive integer starting from `0` which represts the block height/number.
+* 
+## Blockchain ID registration request with five minute validation window
 
-Example:
-Hitting `http://localhost:8000/block/11` with `GET` request returns
+#### Endpoint: `POST` `/requestValidation` 
+
+#### Example Request using curl
+```
+curl -X "POST" "http://localhost:8000/requestValidation" \
+     -H 'Content-Type: application/json; charset=utf-8' \
+     -d $'{
+  "address": "1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN"
+}'
+```
+#### Example response
 ```
 {
     "success": true,
     "data": {
-        "height": 11,
-        "body": "Test string",
-        "time": "1532425867",
-        "previousBlockHash": "d05b0c6b5d5b0e1f315ad40a98a528a676f889c33afde0adc837587e3541e671",
-        "hash": "78664e5e21b6d6557209b9bbe2f041f7645d5ffeb0b6f877e160f14a3af9cac9"
+        "address": "1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN",
+        "requestTimeStamp": 1533472149,
+        "message": "1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN:1533472149:starRegistry",
+        "validationWindow": 300
     }
 }
 ```
 
-* `POST` `/block/` (full url `http://localhost:8000/block/`)
-This will add a new block to the blockchain with the provided block data. The block data should be
-provided by setting `data` property on the request `body` object. 
-Like
+* 
+## Blockchain ID verification
+
+#### Endpoint: `POST` `/message-signature/validate`
+
+#### Example Request using cURL
 ```
-body = {
-    data : "Test block data"
-} 
-//Or
-body = {
-    data: {
-        name: "Waseem",
-        email: "waseem@example.com"
+curl -X POST \
+  http://localhost:8000/message-signature/validate \
+  -H 'Cache-Control: no-cache' \
+  -H 'Content-Type: application/json' \
+  -d '{
+	"address" : "1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN",
+	"signature" : "HHCIa01XUlAbfqdFFAKO8P1BADSaeXYcvm/L76iyJQOitqU58Di5LgSzpUJqmuMUXSAUlDgHZi9WUlsuI8TCHEw="
+}'
+```
+#### Example Response
+```
+{
+    "success": true,
+    "data": {
+        "registerStar": true,
+        "status": {
+            "address": "1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN",
+            "requestTimeStamp": 1533472149,
+            "message": "1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN:1533472149:starRegistry",
+            "validationWindow": 46,
+            "messageSignature": "valid"
+        }
     }
 }
 ```
-#### Request Example using cURL
+
+* 
+## Registering star
+
+#### Endpoint: `POST` `/block`
+
+#### Example Request using cURL
 ```
 curl -X POST \
   http://localhost:8000/block \
   -H 'Cache-Control: no-cache' \
   -H 'Content-Type: application/json' \
   -d '{
-	"data" : "Test block string"
+	"address" : "1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN",
+	"star" : {
+		"dec": "-26° 29'\'' 24.9",
+    "ra": "16h 29m 1.0s",
+    "story": "Found star using https://www.google.com/sky/"
+	}
 }'
 ```
-> Note how I'm setting the `data` property in the request body object, not directly setting it as the value for body.
-
-#### Response Example for above command
+#### Example response
 ```
 {
     "success": true,
     "data": {
-        "height": 15,
-        "body": "Test block string",
-        "time": "1532430603",
-        "previousBlockHash": "c93145b8a29b6df298df57bf2e650bc4bea963e1c15c8eea4cc6bbe4a8942489",
-        "hash": "98969945e98454b3fe7bad4461a9db22d9cbfc087dfd97b60140257fae574410"
+        "height": 26,
+        "body": {
+            "address": "1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN",
+            "star": {
+                "dec": "-26° 29' 24.9",
+                "ra": "16h 29m 1.0s",
+                "story": "466f756e642073746172207573696e672068747470733a2f2f7777772e676f6f676c652e636f6d2f736b792f"
+            }
+        },
+        "time": "1533472200",
+        "previousBlockHash": "2585019fd97dbd75bb4f428f0e5fda8b8567ef7beabafac288f7b212f4a2862d",
+        "hash": "9639334e7cdf14fa410ac2d0e87dfa5cf29a2ad1f55ed3c03af32f4652b2985a"
     }
 }
 ```
+
+* 
+## Stars look-up by wallet address
+
+#### Endpoint: `GET` `/stars/address:[your-wallet-address]`
+
+#### Example Request using cURL
+```
+curl -X GET \
+  http://localhost:8000/stars/address:1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN \
+  -H 'Cache-Control: no-cache'
+```
+#### Example Response
+```
+{
+    "success":true,
+    "data":
+    [
+        {
+            "height": 25,
+            "body": {
+                "address": "1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN",
+                "star": {
+                    "dec": "-26° 29' 24.9",
+                    "ra": "16h 29m 1.0s",
+                    "story": "466f756e642073746172207573696e672068747470733a2f2f7777772e676f6f676c652e636f6d2f736b792f"
+                }
+            },
+            "time": "1533471997",
+            "previousBlockHash": "97c7b3b0471ebccbd7809a16d630a250b1cf255f2e5e336e204854a8d8299718",
+            "hash": "2585019fd97dbd75bb4f428f0e5fda8b8567ef7beabafac288f7b212f4a2862d"
+        },
+        {
+            "height": 26,
+            "body": {
+                "address": "1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN",
+                "star": {
+                    "dec": "-26° 29' 24.9",
+                    "ra": "16h 29m 1.0s",
+                    "story": "466f756e642073746172207573696e672068747470733a2f2f7777772e676f6f676c652e636f6d2f736b792f"
+                }
+            },
+            "time": "1533472200",
+            "previousBlockHash": "2585019fd97dbd75bb4f428f0e5fda8b8567ef7beabafac288f7b212f4a2862d",
+            "hash": "9639334e7cdf14fa410ac2d0e87dfa5cf29a2ad1f55ed3c03af32f4652b2985a"
+        }
+    ]
+}
+
+```
+
+* 
+## Star look-up by block hash
+
+#### Endpoint: `GET` `/stars/hash:[block-hash-here]`
+
+#### Example Request using cURL
+```
+curl -X GET \
+  http://localhost:8000/stars/hash:a78f1bcf16c6909080d7088da9d55cb1b1e3d589d015fd1339846421d89f8783 \
+  -H 'Cache-Control: no-cache'
+
+```
+#### Example Response
+```
+{
+    "success": true,
+    "data": {
+        "height": 18,
+        "body": {
+            "address": "1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN",
+            "star": {
+                "dec": "-26° 29' 24.9",
+                "ra": "16h 29m 1.0s",
+                "story": "Found star using https://www.google.com/sky/"
+            }
+        },
+        "time": "1533460023",
+        "previousBlockHash": "b56b6dc5c793711c63293e00bc797220e8b66ca251fa5e163fea6096eb814a7d",
+        "hash": "a78f1bcf16c6909080d7088da9d55cb1b1e3d589d015fd1339846421d89f8783"
+    }
+}
+```
+
+* 
+## Star look-up by block height
+
+#### Endpoint: `GET` `/block/[block-height]`
+
+#### Example Request using cURL
+```
+curl -X GET \
+  http://localhost:8000/block/26 \
+  -H 'Cache-Control: no-cache'
+```
+#### Example Response
+```
+{
+    "success": true,
+    "data": {
+        "height": 26,
+        "body": {
+            "address": "1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN",
+            "star": {
+                "dec": "-26° 29' 24.9",
+                "ra": "16h 29m 1.0s",
+                "story": "466f756e642073746172207573696e672068747470733a2f2f7777772e676f6f676c652e636f6d2f736b792f"
+            }
+        },
+        "time": "1533472200",
+        "previousBlockHash": "2585019fd97dbd75bb4f428f0e5fda8b8567ef7beabafac288f7b212f4a2862d",
+        "hash": "9639334e7cdf14fa410ac2d0e87dfa5cf29a2ad1f55ed3c03af32f4652b2985a"
+    }
+}
+```
+
 
 ## Testing the REST Endpoints
 
@@ -103,20 +260,13 @@ a `success` property with Boolean value(true/false) which can be used to check i
 have actual data inside it. If `success` property is `false`, then you can check `message` property which will tell you why the request failed. So in short here is the format of my JSON response
 ```
 {
-    "success": true/false // This property will be always preset in all responses.
-    "data": // Actual data expected by the user. It may be preset or not.
+    "success": true/false // This property will be always present in all responses.
+    "data": // Actual data expected by the user. It may be present or not.
     "message": // A message to user. It may be present or not.
 }
 
 ```
 
 * You can test the REST API with Postman, cURL or other methods you may know of.
-
-* I have also provided a test file inside the test directory `app.test.js`. You can use this 
-to play around and check the API. To run the tests type
-```
-yarn test
-```
-in your terminal.
 
 ### That's all for now
