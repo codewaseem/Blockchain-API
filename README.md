@@ -37,7 +37,6 @@ in your terminal. This will start the server at `http://localhost:8000/`
 
 ## About the REST Endpoints
 
-* 
 ## Blockchain ID registration request with five minute validation window
 
 #### Endpoint: `POST` `/requestValidation` 
@@ -63,7 +62,6 @@ curl -X "POST" "http://localhost:8000/requestValidation" \
 }
 ```
 
-* 
 ## Blockchain ID verification
 
 #### Endpoint: `POST` `/message-signature/validate`
@@ -96,7 +94,6 @@ curl -X POST \
 }
 ```
 
-* 
 ## Registering star
 
 #### Endpoint: `POST` `/block`
@@ -137,7 +134,6 @@ curl -X POST \
 }
 ```
 
-* 
 ## Stars look-up by wallet address
 
 #### Endpoint: `GET` `/stars/address:[your-wallet-address]`
@@ -187,7 +183,6 @@ curl -X GET \
 
 ```
 
-* 
 ## Star look-up by block hash
 
 #### Endpoint: `GET` `/stars/hash:[block-hash-here]`
@@ -220,7 +215,6 @@ curl -X GET \
 }
 ```
 
-* 
 ## Star look-up by block height
 
 #### Endpoint: `GET` `/block/[block-height]`
