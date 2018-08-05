@@ -2,6 +2,8 @@ import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as dotenv from "dotenv";
 import Blockchain from "./models/Blockchain";
+import { requestValidation, messageSignatureValidate } from "./api/starRegistry";
+
 const DOT_ENV_PATH = ".env";
 dotenv.config({ path: DOT_ENV_PATH });
 
@@ -91,5 +93,9 @@ app.get("/blockchain/", async (req, res) => {
     });
   }
 });
+
+app.post("/requestValidation", requestValidation);
+
+app.post("/message-signature/validate", messageSignatureValidate);
 
 export default app;
