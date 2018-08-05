@@ -101,6 +101,7 @@ export function registerStar(req, res) {
         if (requestTimer.isRequestExpired(address)) {
             sendFailureJsonResponse(res, 400, "Request expired/used.");
         } else {
+            star.story = Buffer.from(star.story).toString("hex");
             const blockData = { address, star };
             blockChain.createAndAddBlock(blockData)
                 .then(block => {
