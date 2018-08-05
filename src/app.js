@@ -1,8 +1,7 @@
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as dotenv from "dotenv";
-import Blockchain from "./models/Blockchain";
-import { requestValidation, messageSignatureValidate } from "./api/starRegistry";
+import { requestValidation, messageSignatureValidate, registerStar } from "./api/starRegistry";
 
 const DOT_ENV_PATH = ".env";
 dotenv.config({ path: DOT_ENV_PATH });
@@ -12,8 +11,6 @@ const app = express();
 app.set("port", process.env.PORT || 8000);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-const blockChain = new Blockchain();
 
 app.get("/", (req, res) => {
   res.json({
@@ -29,24 +26,7 @@ app.get("/", (req, res) => {
  * the body object e.g body.data = "Test Data",
  * otherwise it will respond with an error.
  */
-app.post("/block/", (req, res) => {
-  const blockData = req.body.data;
-  if (blockData) {
-    blockChain.createAndAddBlock(blockData)
-      .then(block => {
-        res.json({
-          success: true,
-          data: block
-        });
-      });
-  } else {
-    res.statusCode = 400;
-    res.json({
-      success: false,
-      message: "Please provide the block data by setting the data property of the request's body object"
-    });
-  }
-});
+app.post("/block/", registerStar);
 
 /**
  * GET /block/:height,

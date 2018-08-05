@@ -1,5 +1,7 @@
 const bitcoin = require('bitcoinjs-lib');
 const bitcoinMessage = require('bitcoinjs-message');
+import blockChain from "../models/Blockchain";
+
 /* requestValidation endpoint
 
 curl -X "POST" "http://localhost:8000/requestValidation" \
@@ -48,6 +50,10 @@ class RequestValidationTimer {
 
     addNewRequest(address, requestTimeStamp) {
         this.requests[address] = requestTimeStamp;
+    }
+
+    removeRequest(address) {
+        delete this.requests[address];
     }
 
     isRequestExpired(address) {
@@ -125,4 +131,37 @@ export function messageSignatureValidate(req, res) {
             message: "Address/Signature not provided."
         });
     }
+}
+
+export function registerStar(req, res) {
+    let { address, star } = req.body;
+    if (address && isStarDataValid(star)) {
+        if (requestTimer.isRequestExpired(address)) {
+            res.statusCode = 400;
+            res.json({
+                success: false,
+                message: "Request expired/used."
+            });
+        } else {
+            const blockData = { address, star };
+            blockChain.createAndAddBlock(blockData)
+                .then(block => {
+                    res.json({
+                        success: true,
+                        data: block
+                    });
+                });
+            requestTimer.removeRequest(address);
+        }
+    } else {
+        res.statusCode = 400;
+        res.json({
+            success: false,
+            message: "Address/star object is invalid."
+        });
+    }
+}
+
+function isStarDataValid(star) {
+    return (star && star.ra && star.dec && star.story && star.story.split(" ").length <= 250);
 }

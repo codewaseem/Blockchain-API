@@ -10,7 +10,7 @@ const CHAIN_DB_NAME = "blockchain";
  * Blockchain class responsible for creating and adding blocks to the blockchain.
  * This class can also validate the individual block or entire blockchain.
  */
-export default class Blockchain {
+class Blockchain {
 
     /**
      * Returns a promise of array of blocks (blockchain) from the levelDB, if
@@ -124,3 +124,6 @@ export default class Blockchain {
         }
     }
 }
+const blockChain = new Blockchain();
+
+export default blockChain;
