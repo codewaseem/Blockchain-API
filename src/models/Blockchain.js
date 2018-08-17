@@ -12,6 +12,10 @@ const CHAIN_DB_NAME = "blockchain";
  */
 class Blockchain {
 
+    constructor() {
+        this.createAndAddBlock("Genesis block");
+    }
+
     /**
      * Returns a promise of array of blocks (blockchain) from the levelDB, if
      * there is no data in the levelDB then promise of empty array is returned.

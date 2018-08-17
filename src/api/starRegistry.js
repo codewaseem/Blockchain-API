@@ -98,7 +98,7 @@ export function messageSignatureValidate(req, res) {
                         address,
                         requestTimeStamp,
                         message,
-                        validationWindow: getTimeStampInSeconds() - requestTimeStamp,
+                        validationWindow: VALIIDATION_WINDOW_SECONDS - ( getTimeStampInSeconds() - requestTimeStamp),
                         messageSignature: "valid"
                     }
                 });
