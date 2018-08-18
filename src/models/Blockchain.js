@@ -11,11 +11,6 @@ const CHAIN_DB_NAME = "blockchain";
  * This class can also validate the individual block or entire blockchain.
  */
 class Blockchain {
-
-    constructor() {
-        this.createAndAddBlock("Genesis block");
-    }
-
     /**
      * Returns a promise of array of blocks (blockchain) from the levelDB, if
      * there is no data in the levelDB then promise of empty array is returned.
@@ -146,5 +141,11 @@ class Blockchain {
     }
 }
 const blockChain = new Blockchain();
+(async function() {
+    let chain = await blockChain.getChain();
+    if(chain.length === 0) {
+        blockChain.createAndAddBlock("Genesis block");
+    }
+})();
 
 export default blockChain;
